@@ -1,0 +1,57 @@
+name: "Project 01 - CI/CD Hub Spoke Infra + Firewall"
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  security-scan-and-deploy:
+    name: "Checkov Scan & Terraform Deploy"
+    runs-on: ubuntu-latest
+
+    env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          
+
+    steps:
+      - name: 1. Downloading the code from repository
+        uses: actions/checkout@v4
+
+      - name: 2. IaC security scan
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: ./terraform
+          framework: terraform
+          skip_check: CKV2_AZURE_31
+          soft_fail: false
+
+      - name: 3. OIDC login into Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: 4. Terraform instalation
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.0
+
+      - name: 5. Terraform init
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: 6. Terraform plan
+        working-directory: ./terraform
+        run: terraform plan -out=tfplan
+
+      - name: 7. Terraform apply (auto approve)
+        working-directory: ./terraform
+        run: terraform apply -auto-approve tfplan
