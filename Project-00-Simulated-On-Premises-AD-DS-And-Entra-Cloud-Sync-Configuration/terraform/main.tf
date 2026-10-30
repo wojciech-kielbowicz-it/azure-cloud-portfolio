@@ -82,7 +82,7 @@ resource "azurerm_windows_virtual_machine" "vm_dc01" {
   location              = azurerm_resource_group.rg_onprem.location
   size                  = "Standard_B2ls_v2"
   admin_username        = "bg_account"
-  admin_password        = "!!aaBBdd11!!"
+  admin_password        = "var.admin_password" # variables.tf not pushed into GitHub
   network_interface_ids = [azurerm_network_interface.nic_onprem.id]
   os_disk {
     caching              = "ReadWrite"

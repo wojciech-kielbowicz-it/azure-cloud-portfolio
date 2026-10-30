@@ -6,10 +6,11 @@ on:
       project_folder:
         description: 'Choose the folder to perform action'
         required: true
-        default: 'Project-01-Hub-Spoke/terraform'
+        default: 'Project-01-CI-CD-Hub-and-Spoke-Deployment/terraform'
         type: choice
         options:
-          - Project-01-CI/CD-Hub-and-Spoke-Deployment/terraform
+          - Project-01-CI-CD-Hub-and-Spoke-Deployment/terraform
+          - Project-03-Hybrid-SSO-Kerberos-Cloud-Trust-Passwordless-SignIn/terraform
           
       action:
         description: 'Choose the action to perform'
@@ -33,6 +34,7 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_vm_admin_password: ${{ secrets.TF_VAR_vm_admin_password }}
           
 
     steps:
@@ -42,9 +44,11 @@ jobs:
       - name: 2. IaC security scan
         uses: bridgecrewio/checkov-action@v12
         with:
-          directory: ./terraform
+          directory: ${{ github.event.inputs.project_folder }}
           framework: terraform
-          skip_check: CKV2_AZURE_31
+          # skip_check: CKV2_AZURE_31 # Uncomment for Project-01 | skip 'Ensure VNET subnet is configured with a Network Security Group' check in checkov
+          skip_check: CKV_AZURE_50,CKV_AZURE_151 # Uncomment for Project-04 | skip 'Ensure Virtual Machine Extensions are not Installed'
+          # & 'Ensure Windows Virtual Machines have enabled encryption at host' check in checkov
           soft_fail: false
 
       - name: 3. OIDC login into Azure
@@ -60,13 +64,23 @@ jobs:
           terraform_version: 1.10.0
 
       - name: 5. Terraform init
-        working-directory: ./terraform
+        working-directory: ${{ github.event.inputs.project_folder }}
         run: terraform init
 
       - name: 6. Terraform plan
-        working-directory: ./terraform
-        run: terraform plan -out=tfplan
+        working-directory: ${{ github.event.inputs.project_folder }}
+        run: |
+          if [ "${{ github.event.inputs.action }}" = "destroy" ]; then
+            terraform plan -destroy -out=tfplan
+          else
+            terraform plan -out=tfplan
+          fi
 
-      - name: 7. Terraform apply (auto approve)
-        working-directory: ./terraform
-        run: terraform apply -auto-approve tfplan
+      - name: 7. Terraform apply / destroy
+        working-directory: ${{ github.event.inputs.project_folder }}
+        run: |
+          if [ "${{ github.event.inputs.action }}" = "destroy" ]; then
+            terraform destroy -auto-approve
+          else
+            terraform apply -auto-approve tfplan
+          fi
