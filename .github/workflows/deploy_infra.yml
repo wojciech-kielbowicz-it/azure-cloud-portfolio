@@ -1,9 +1,24 @@
-name: "Project 01 - CI/CD Hub Spoke Infra + Firewall"
+name: "Multi-Project CI/CD Terraform Deployment (Manually triggered with the selection of a project folder)"
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
+    inputs:
+      project_folder:
+        description: 'Choose the folder to perform action'
+        required: true
+        default: 'Project-01-Hub-Spoke/terraform'
+        type: choice
+        options:
+          - Project-01-CI/CD-Hub-and-Spoke-Deployment/terraform
+          
+      action:
+        description: 'Choose the action to perform'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - apply
+          - destroy
 
 permissions:
   id-token: write
