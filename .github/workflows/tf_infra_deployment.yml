@@ -1,0 +1,126 @@
+name: "Multi-Project CI/CD Terraform Deployment (Manually triggered with the selection of a project folder)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_folder:
+        description: 'Choose the folder to perform action'
+        required: true
+        default: 'Project-01-AD-DC-Simulation-Entra-Cloud-Sync-Polcies'
+        type: choice
+        options:
+          - Project-01-AD-DC-Simulation-Entra-Cloud-Sync-Polcies
+          - Project-03-Hub-and-Spoke
+          
+      action:
+        description: 'Choose the action to perform'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - apply
+          - destroy
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  TF_VAR_vm_admin_password: ${{ secrets.TF_VAR_vm_admin_password }}
+  TF_DIR: ${{ github.event.inputs.project_folder }}/terraform
+
+jobs:
+  plan:
+    name: "1. Checkov Scan & Terraform Plan"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Downloading the code from repository
+        uses: actions/checkout@v4
+
+      - name: 2. IaC security scan
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: ${{ env.TF_DIR }}
+          framework: terraform
+          skip_check: ${{ github.event.inputs.project_folder == 'Project-01-AD-DC-Simulation-Entra-Cloud-Sync-Polcies' && 'CKV_AZURE_9,CKV2_AZURE_10,CKV2_AZURE_31,CKV_AZURE_50,CKV_AZURE_119' || (github.event.inputs.project_folder == 'Project-03-Hub-and-Spoke' && 'CKV2_AZURE_31' || '') }}
+          soft_fail: false
+
+      - name: 3. OIDC login into Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: 4. Terraform installation
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.0
+
+      - name: 5. Terraform init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init
+
+      - name: 6. Terraform plan
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          if [ "${{ github.event.inputs.action }}" = "destroy" ]; then
+            terraform plan -destroy -out=tfplan
+          else
+            terraform plan -out=tfplan
+          fi
+
+      - name: 7. Publish Plan to Job Summary
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          echo "### Terraform Plan (${{ github.event.inputs.action }}) for: \`${{ env.TF_DIR }}\`" >> $GITHUB_STEP_SUMMARY
+          echo '```terraform' >> $GITHUB_STEP_SUMMARY
+          terraform show -no-color tfplan >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: 8. Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ github.run_id }}
+          path: ${{ env.TF_DIR }}/tfplan
+          retention-days: 1
+
+  execute:
+    name: "2. Approve & Execute (${{ github.event.inputs.action }})"
+    runs-on: ubuntu-latest
+    needs: plan
+    environment: production
+
+    steps:
+      - name: 1. Downloading the code from repository
+        uses: actions/checkout@v4
+
+      - name: 2. Download tfplan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ github.run_id }}
+          path: ${{ env.TF_DIR }}
+
+      - name: 3. OIDC login into Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: 4. Terraform installation
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.0
+
+      - name: 5. Terraform init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init
+
+      - name: 6. Terraform apply / destroy from approved plan
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -auto-approve tfplan
