@@ -12,6 +12,7 @@ on:
           - Project-01-AD-DC-Simulation-Entra-Cloud-Sync-Polcies
           - Project-03-Hub-and-Spoke
           - Project-04-Private-DNS-Key-Vault
+          - Project-05-Monitoring-Sentinel
           
       action:
         description: 'Choose the action to perform'
@@ -53,10 +54,12 @@ jobs:
               && 'CKV_AZURE_9,CKV2_AZURE_10,CKV2_AZURE_31,CKV_AZURE_50,CKV_AZURE_119' 
               || (github.event.inputs.project_folder == 'Project-03-Hub-and-Spoke' 
               && 'CKV2_AZURE_31' 
-              || (github.event.inputs.project_folder == 'Project-04-Private-DNS-Key-Vault'
+              || (github.event.inputs.project_folder == 'Project-04-Private-DNS-KeyVault'
               && 'CKV2_AZURE_32,CKV_AZURE_109,CKV_AZURE_189'
-              || ''))
-              }}
+              || (github.event.inputs.project_folder == 'Project-05-Monitoring-Sentinel'
+              && 'CKV_AZURE_212'
+              || '')))
+            }}
           soft_fail: false
 
       - name: 3. OIDC login into Azure
