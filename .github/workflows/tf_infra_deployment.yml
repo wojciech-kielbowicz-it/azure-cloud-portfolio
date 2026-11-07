@@ -11,8 +11,9 @@ on:
         options:
           - Project-01-AD-DC-Simulation-Entra-Cloud-Sync-Polcies
           - Project-03-Hub-and-Spoke
-          - Project-04-Private-DNS-Key-Vault
+          - Project-04-Private-DNS-KeyVault
           - Project-05-Monitoring-Sentinel
+          - Project-06-Private-Data-Platform
           
       action:
         description: 'Choose the action to perform'
@@ -54,11 +55,13 @@ jobs:
               && 'CKV_AZURE_9,CKV2_AZURE_10,CKV2_AZURE_31,CKV_AZURE_50,CKV_AZURE_119' 
               || (github.event.inputs.project_folder == 'Project-03-Hub-and-Spoke' 
               && 'CKV2_AZURE_31' 
-              || (github.event.inputs.project_folder == 'Project-04-Private-DNS-KeyVault'
+              || (github.event.inputs.project_folder == 'Project-04-Private-DNS-Key-Vault'
               && 'CKV2_AZURE_32,CKV_AZURE_109,CKV_AZURE_189'
               || (github.event.inputs.project_folder == 'Project-05-Monitoring-Sentinel'
               && 'CKV_AZURE_212'
-              || '')))
+              || (github.event.inputs.project_folder == 'Project-06-Private-Data-Platform'
+              && 'CKV_AZURE_23,CKV_AZURE_24,CKV_AZURE_33,CKV_AZURE_43,CKV_AZURE_44,CKV_AZURE_59,CKV_AZURE_206,CKV_AZURE_224,CKV_AZURE_229,CKV2_AZURE_1,CKV2_AZURE_2,CKV2_AZURE_18,CKV2_AZURE_27,CKV2_AZURE_33,CKV2_AZURE_38,CKV2_AZURE_40,CKV2_AZURE_41'
+              || ''))))
             }}
           soft_fail: false
 
