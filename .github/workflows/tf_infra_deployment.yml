@@ -11,9 +11,10 @@ on:
         options:
           - Project-01-AD-DC-Simulation-Entra-Cloud-Sync-Polcies
           - Project-03-Hub-and-Spoke
-          - Project-04-Private-DNS-KeyVault
+          - Project-04-Private-DNS-Key-Vault
           - Project-05-Monitoring-Sentinel
           - Project-06-Private-Data-Platform
+          - Project-07-AI-RAG-Foundation
           
       action:
         description: 'Choose the action to perform'
@@ -61,7 +62,9 @@ jobs:
               && 'CKV_AZURE_212'
               || (github.event.inputs.project_folder == 'Project-06-Private-Data-Platform'
               && 'CKV_AZURE_23,CKV_AZURE_24,CKV_AZURE_33,CKV_AZURE_43,CKV_AZURE_44,CKV_AZURE_59,CKV_AZURE_206,CKV_AZURE_224,CKV_AZURE_229,CKV2_AZURE_1,CKV2_AZURE_2,CKV2_AZURE_18,CKV2_AZURE_27,CKV2_AZURE_33,CKV2_AZURE_38,CKV2_AZURE_40,CKV2_AZURE_41'
-              || ''))))
+              || (github.event.inputs.project_folder == 'Project-07-AI-RAG-Foundation'
+              && 'CKV2_AZURE_22,CKV_AZURE_208,CKV_AZURE_209'
+              || '')))))
             }}
           soft_fail: false
 
