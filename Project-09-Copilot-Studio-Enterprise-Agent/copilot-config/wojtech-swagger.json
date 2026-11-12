@@ -1,0 +1,109 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Wojtech-Cloud Enterprise Zero Trust API",
+    "description": "Live Cross-Subsystem Microservice in vnet-spoke-ai-data (10.2.2.0/24) querying Azure SQL and ADLS Gen2 over Private Endpoints (10.2.1.x) via Managed Identity.",
+    "version": "2.1.0"
+  },
+  "host": "app-wojtech-copilot-api-34iut3.azurewebsites.net",
+  "basePath": "/",
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/network-diagnostics": {
+      "get": {
+        "summary": "Get Zero Trust Network Diagnostics",
+        "description": "Resolves PaaS FQDNs from inside the VNet to prove that traffic routes via Hub Private DNS Zones to Private Endpoints (10.2.1.x).",
+        "operationId": "GetZeroTrustNetworkDiagnostics",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/datalake-documents": {
+      "get": {
+        "summary": "List Data Lake Knowledge Documents",
+        "description": "Connects to ADLS Gen2 using Managed Identity and lists enterprise markdown documents in ai-knowledge-docs.",
+        "operationId": "ListDataLakeKnowledgeDocs",
+        "parameters": [
+          {
+            "name": "container_name",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "default": "ai-knowledge-docs",
+            "description": "ADLS Gen2 container name"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/datalake-documents/read": {
+      "get": {
+        "summary": "Read Data Lake Document Content",
+        "description": "Reads the full Markdown text of a policy (WC-POL-2026-01_Wojtech_Cloud_MSP_SLA_and_Commercial_Playbook.md) or L3 runbook (WC-SOP-2026-02_L3_Cloud_Engineering_and_SecOps_Troubleshooting_Guide.md) directly from ADLS Gen2 over Private Endpoint.",
+        "operationId": "ReadDataLakeDocumentContent",
+        "parameters": [
+          {
+            "name": "document_name",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "default": "WC-POL-2026-01_Wojtech_Cloud_MSP_SLA_and_Commercial_Playbook.md",
+            "description": "Exact Markdown filename in ADLS Gen2 (WC-POL-2026-01_Wojtech_Cloud_MSP_SLA_and_Commercial_Playbook.md or WC-SOP-2026-02_L3_Cloud_Engineering_and_SecOps_Troubleshooting_Guide.md)"
+          },
+          {
+            "name": "container_name",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "default": "ai-knowledge-docs",
+            "description": "Container name in Data Lake"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/copilot/operations-summary": {
+      "get": {
+        "summary": "Get Wojtech-Cloud Live SQL Operations Summary",
+        "description": "Executes live SQL SELECT queries against sqldb-ai-knowledge over Private Endpoint (10.2.1.x) using Entra ID Managed Identity token. Returns active migration projects and support escalation tickets.",
+        "operationId": "GetWojtechCloudOperations",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    }
+  }
+}
