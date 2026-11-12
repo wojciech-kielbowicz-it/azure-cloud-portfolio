@@ -16,6 +16,7 @@ on:
           - Project-06-Private-Data-Platform
           - Project-07-AI-RAG-Foundation
           - Project-08-Secure-Compute-App-Platform
+          - Project-09-Copilot-Studio-Enterprise-Agent
           
       action:
         description: 'Choose the action to perform'
