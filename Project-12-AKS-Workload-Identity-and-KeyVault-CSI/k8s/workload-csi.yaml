@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=none
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ${service_account_name}
+  namespace: ${namespace}
+  annotations:
+    azure.workload.identity/client-id: "${workload_identity_client_id}"
+  labels:
+    azure.workload.identity/use: "true"
+---
+# yaml-language-server: $schema=none
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: azure-kvname-wi
+  namespace: ${namespace}
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    clientID: "${workload_identity_client_id}"
+    keyvaultName: "${key_vault_name}"
+    cloudName: ""
+    objects: |
+      array:
+        - |
+          objectName: ${secret_name}
+          objectType: secret
+          objectVersion: ""
+    tenantId: "${tenant_id}"
+---
+# yaml-language-server: $schema=none
+apiVersion: v1
+kind: Pod
+metadata:
+  name: zero-trust-app-pod
+  namespace: ${namespace}
+  labels:
+    azure.workload.identity/use: "true"
+    app: zero-trust-demo
+spec:
+  serviceAccountName: ${service_account_name}
+  containers:
+    - name: app-container
+      image: mcr.microsoft.com/oss/nginx/nginx:1.25-alpine
+      securityContext:
+        allowPrivilegeEscalation: false
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "250m"
+          memory: "256Mi"
+      volumeMounts:
+        - name: secrets-store01-inline
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+  volumes:
+    - name: secrets-store01-inline
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: "azure-kvname-wi"
