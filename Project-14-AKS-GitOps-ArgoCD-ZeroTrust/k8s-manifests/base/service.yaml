@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zero-trust-web-ilb
+  namespace: default
+  labels:
+    app: zero-trust-web
+    managed-by: argocd
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "subnet-web"
+    service.beta.kubernetes.io/azure-load-balancer-ipv4: "10.3.1.250"
+spec:
+  type: LoadBalancer
+  selector:
+    app: zero-trust-web
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80

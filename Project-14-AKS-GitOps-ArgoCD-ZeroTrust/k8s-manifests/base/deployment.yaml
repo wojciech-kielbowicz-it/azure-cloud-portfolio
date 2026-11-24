@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zero-trust-web-deployment
+  namespace: default
+  labels:
+    app: zero-trust-web
+    managed-by: argocd
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: zero-trust-web
+  template:
+    metadata:
+      labels:
+        app: zero-trust-web
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: sa-zero-trust-app
+      containers:
+        - name: web-app
+          image: acrspokecomputelghww9.azurecr.io/zero-trust-web:v1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          securityContext:
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 5
+          volumeMounts:
+            - name: secrets-store01-inline
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+      volumes:
+        - name: secrets-store01-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-kvname-wi"
